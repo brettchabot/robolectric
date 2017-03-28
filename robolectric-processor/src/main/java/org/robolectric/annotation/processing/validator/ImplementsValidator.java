@@ -20,9 +20,12 @@ public class ImplementsValidator extends Validator {
 
   public static final String IMPLEMENTS_CLASS = "org.robolectric.annotation.Implements";
   public static final int MAX_SUPPORTED_ANDROID_SDK = 23;
+  private final ProcessingEnvironment env;
 
   public ImplementsValidator(RobolectricModel model, ProcessingEnvironment env) {
     super(model, env, IMPLEMENTS_CLASS);
+
+    this.env = env;
   }
 
   private TypeElement getClassNameTypeElement(AnnotationValue cv) {
@@ -38,6 +41,8 @@ public class ImplementsValidator extends Validator {
   
   @Override
   public Void visitType(TypeElement elem, Element parent) {
+    model.documentType(elem, env.getElementUtils().getDocComment(elem));
+
     // Don't import nested classes because some of them have the same name.
     AnnotationMirror am = getCurrentAnnotation();
     AnnotationValue av = RobolectricModel.getAnnotationValue(am, "value");
