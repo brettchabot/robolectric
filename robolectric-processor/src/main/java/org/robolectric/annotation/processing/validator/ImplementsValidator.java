@@ -1,5 +1,9 @@
 package org.robolectric.annotation.processing.validator;
 
+import org.pegdown.Extensions;
+import org.pegdown.PegDownProcessor;
+import org.robolectric.annotation.Implementation;
+import org.robolectric.annotation.processing.DocumentedMethod;
 import org.robolectric.annotation.processing.RobolectricModel;
 
 import java.util.List;
@@ -8,9 +12,14 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
 
 /**
@@ -21,11 +30,13 @@ public class ImplementsValidator extends Validator {
   public static final String IMPLEMENTS_CLASS = "org.robolectric.annotation.Implements";
   public static final int MAX_SUPPORTED_ANDROID_SDK = 23;
   private final ProcessingEnvironment env;
+  private final PegDownProcessor pegDownProcessor;
 
   public ImplementsValidator(RobolectricModel model, ProcessingEnvironment env) {
     super(model, env, IMPLEMENTS_CLASS);
 
     this.env = env;
+    pegDownProcessor = this.getPegDownProcessor();
   }
 
   private TypeElement getClassNameTypeElement(AnnotationValue cv) {
@@ -38,10 +49,52 @@ public class ImplementsValidator extends Validator {
     }
     return type;
   }
-  
+
+  private PegDownProcessor getPegDownProcessor() {
+    final int pegdownExtensions =
+      Extensions.AUTOLINKS
+          | Extensions.DEFINITIONS
+          | Extensions.FENCED_CODE_BLOCKS
+          | Extensions.SMARTYPANTS
+          | Extensions.TABLES
+          | Extensions.WIKILINKS
+          | Extensions.STRIKETHROUGH;
+
+    return new PegDownProcessor(pegdownExtensions, 100);
+  }
+
   @Override
   public Void visitType(TypeElement elem, Element parent) {
-    model.documentType(elem, env.getElementUtils().getDocComment(elem));
+    Elements elementUtils = env.getElementUtils();
+    model.documentType(elem, elementUtils.getDocComment(elem));
+
+    for (Element memberElement : ElementFilter.methodsIn(elem.getEnclosedElements())) {
+      ExecutableElement methodElement = (ExecutableElement) memberElement;
+      Implementation implementation = memberElement.getAnnotation(Implementation.class);
+
+      DocumentedMethod documentedMethod = new DocumentedMethod(memberElement.toString());
+      for (Modifier modifier : memberElement.getModifiers()) {
+        documentedMethod.modifiers.add(modifier.toString());
+      }
+      documentedMethod.isImplementation = implementation != null;
+      if (implementation != null) {
+        documentedMethod.minSdk = sdkOrNull(implementation.minSdk());
+        documentedMethod.maxSdk = sdkOrNull(implementation.maxSdk());
+      }
+      for (VariableElement variableElement : methodElement.getParameters()) {
+        documentedMethod.params.add(variableElement.toString());
+      }
+      documentedMethod.returnType = methodElement.getReturnType().toString();
+      for (TypeMirror typeMirror : methodElement.getThrownTypes()) {
+        documentedMethod.exceptions.add(typeMirror.toString());
+      }
+      String docMd = elementUtils.getDocComment(methodElement);
+      if (docMd != null) {
+        documentedMethod.documentation = pegDownProcessor.markdownToHtml(docMd);
+      }
+
+      model.documentMethod(elem, documentedMethod);
+    }
 
     // Don't import nested classes because some of them have the same name.
     AnnotationMirror am = getCurrentAnnotation();
@@ -117,5 +170,9 @@ public class ImplementsValidator extends Validator {
     }
     model.addShadowType(elem, type);
     return null;
+  }
+
+  private Integer sdkOrNull(int sdk) {
+    return sdk == -1 ? null : sdk;
   }
 }

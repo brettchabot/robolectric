@@ -24,7 +24,7 @@ public class ImplementationValidator extends FoundOnImplementsValidator {
   public Void visitExecutable(ExecutableElement elem, TypeElement parent) {
     // TODO: Check that it has the right signature
 
-    model.documentMethod(parent, elem, elementUtils.getDocComment(elem));
+//    model.documentMethod(parent, elem, elementUtils.getDocComment(elem));
 
     return null;
   }

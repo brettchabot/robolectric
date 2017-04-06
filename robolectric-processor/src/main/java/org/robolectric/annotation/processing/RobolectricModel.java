@@ -84,8 +84,6 @@ public class RobolectricModel {
   public static abstract class DocumentedElement {
     private final String name;
 
-    public String documentation;
-
     protected DocumentedElement(String name) {
       this.name = name;
     }
@@ -97,60 +95,6 @@ public class RobolectricModel {
     @Override
     public String toString() {
       return getClass().getSimpleName() + "{name='" + name + '\'' + '}';
-    }
-  }
-
-  public static class DocumentedPackage extends DocumentedElement {
-    private final Map<String, DocumentedType> documentedTypes = new TreeMap<>();
-
-    public String documentation;
-
-    DocumentedPackage(String name) {
-      super(name);
-    }
-
-    public Collection<DocumentedType> getDocumentedTypes() {
-      return documentedTypes.values();
-    }
-
-    public DocumentedType getDocumentedType(String name) {
-      DocumentedType documentedType = documentedTypes.get(name);
-      if (documentedType == null) {
-        documentedType = new DocumentedType(name);
-        documentedTypes.put(name, documentedType);
-      }
-      return documentedType;
-    }
-  }
-
-  public static class DocumentedType extends DocumentedElement {
-    private final Map<String, DocumentedMethod> documentedMethods = new TreeMap<>();
-
-    public String documentation;
-
-    DocumentedType(String name) {
-      super(name);
-    }
-
-    public DocumentedMethod getDocumentedMethod(String desc) {
-      DocumentedMethod documentedMethod = documentedMethods.get(desc);
-      if (documentedMethod == null) {
-        documentedMethod = new DocumentedMethod(desc);
-        documentedMethods.put(desc, documentedMethod);
-      }
-      return documentedMethod;
-    }
-
-    public Collection<DocumentedMethod> getDocumentedMethods() {
-      return documentedMethods.values();
-    }
-  }
-
-  public static class DocumentedMethod extends DocumentedElement {
-    public String documentation;
-
-    DocumentedMethod(String name) {
-      super(name);
     }
   }
 
@@ -183,10 +127,9 @@ public class RobolectricModel {
     return documentedPackage.getDocumentedType(type.getQualifiedName().toString());
   }
 
-  public void documentMethod(TypeElement parentType, ExecutableElement method, String documentation) {
-    DocumentedType documentedType = getDocumentedType(parentType);
-    DocumentedMethod documentedMethod = documentedType.getDocumentedMethod(method.toString());
-    documentedMethod.documentation = documentation;
+  public void documentMethod(TypeElement shadowClass, DocumentedMethod documentedMethod) {
+    DocumentedType documentedType = getDocumentedType(shadowClass);
+    documentedType.methods.put(documentedMethod.getName(), documentedMethod);
   }
 
   private static class FQComparator implements Comparator<TypeElement> {

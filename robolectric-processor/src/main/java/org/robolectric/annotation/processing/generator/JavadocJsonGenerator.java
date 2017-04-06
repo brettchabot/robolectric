@@ -1,8 +1,11 @@
 package org.robolectric.annotation.processing.generator;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonWriter;
+import org.robolectric.annotation.processing.DocumentedMethod;
+import org.robolectric.annotation.processing.DocumentedPackage;
+import org.robolectric.annotation.processing.DocumentedType;
 import org.robolectric.annotation.processing.RobolectricModel;
 
 import javax.annotation.processing.Messager;
@@ -22,12 +25,16 @@ public class JavadocJsonGenerator extends Generator {
   public static final Pattern START_OR_NEWLINE_SPACE = Pattern.compile("(^|\n) ");
   private final RobolectricModel model;
   private final Messager messager;
+  private final Gson gson;
 
   public JavadocJsonGenerator(RobolectricModel model, ProcessingEnvironment environment) {
     super();
 
     this.model = model;
     this.messager = environment.getMessager();
+    gson = new GsonBuilder()
+        .setPrettyPrinting()
+        .create();
   }
 
   @Override
@@ -47,28 +54,28 @@ public class JavadocJsonGenerator extends Generator {
 
     File docs = new File("robolectric-shadows/shadows-core/build/json-docs");
 
-    for (RobolectricModel.DocumentedPackage documentedPackage : model.getDocumentedPackages()) {
+    for (DocumentedPackage documentedPackage : model.getDocumentedPackages()) {
       JsonObject packageJsonObj = new JsonObject();
       packageJsonObj.addProperty("doc", documentedPackage.documentation);
 //      writeJson(packageJsonObj, new File(docs, documentedPackage.getName() + ".json"));
 
-      for (RobolectricModel.DocumentedType documentedType : documentedPackage.getDocumentedTypes()) {
+      for (DocumentedType documentedType : documentedPackage.getDocumentedTypes()) {
         String shadowedType = shadowedTypes.get(documentedType.getName());
-//        System.out.println("For " + shadowedType + " methods are " + documentedType.getDocumentedMethods());
+//        System.out.println("For " + shadowedType + " methods are " + documentedType.getMethods());
 
         JsonObject typeJsonObj = new JsonObject();
         typeJsonObj.addProperty("shadowClass", documentedType.getName());
         putDoc(typeJsonObj, documentedType.documentation);
 
         JsonObject methodsJsonObj = new JsonObject();
-        for (RobolectricModel.DocumentedMethod documentedMethod : documentedType.getDocumentedMethods()) {
+        for (DocumentedMethod documentedMethod : documentedType.getMethods()) {
           JsonObject methodJsonObj = new JsonObject();
           methodsJsonObj.add(documentedMethod.getName(), methodJsonObj);
           putDoc(methodJsonObj, documentedMethod.documentation);
         }
         typeJsonObj.add("methods", methodsJsonObj);
 
-        writeJson(typeJsonObj, new File(docs, shadowedType + ".json"));
+        writeJson(documentedType, new File(docs, shadowedType + ".json"));
       }
     }
   }
@@ -80,13 +87,11 @@ public class JavadocJsonGenerator extends Generator {
     }
   }
 
-  private void writeJson(JsonObject json, File file) {
+  private void writeJson(Object object, File file) {
     file.getParentFile().mkdirs();
 
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-      JsonWriter jsonWriter = new JsonWriter(writer);
-      jsonWriter.setIndent("  ");
-      new Gson().toJson(json, jsonWriter);
+      gson.toJson(object, writer);
     } catch (IOException e) {
       messager.printMessage(Diagnostic.Kind.ERROR, "Failed to write javadoc JSON file: " + e);
       throw new RuntimeException(e);
