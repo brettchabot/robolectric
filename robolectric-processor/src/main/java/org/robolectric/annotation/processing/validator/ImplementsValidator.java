@@ -1,12 +1,8 @@
 package org.robolectric.annotation.processing.validator;
 
-import org.pegdown.Extensions;
-import org.pegdown.PegDownProcessor;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.processing.DocumentedMethod;
 import org.robolectric.annotation.processing.RobolectricModel;
-
-import java.util.List;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -21,6 +17,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
+import java.util.List;
 
 /**
  * Validator that checks usages of {@link org.robolectric.annotation.Implements}.
@@ -30,13 +27,11 @@ public class ImplementsValidator extends Validator {
   public static final String IMPLEMENTS_CLASS = "org.robolectric.annotation.Implements";
   public static final int MAX_SUPPORTED_ANDROID_SDK = 23;
   private final ProcessingEnvironment env;
-  private final PegDownProcessor pegDownProcessor;
 
   public ImplementsValidator(RobolectricModel model, ProcessingEnvironment env) {
     super(model, env, IMPLEMENTS_CLASS);
 
     this.env = env;
-    pegDownProcessor = this.getPegDownProcessor();
   }
 
   private TypeElement getClassNameTypeElement(AnnotationValue cv) {
@@ -48,19 +43,6 @@ public class ImplementsValidator extends Validator {
       return null;
     }
     return type;
-  }
-
-  private PegDownProcessor getPegDownProcessor() {
-    final int pegdownExtensions =
-      Extensions.AUTOLINKS
-          | Extensions.DEFINITIONS
-          | Extensions.FENCED_CODE_BLOCKS
-          | Extensions.SMARTYPANTS
-          | Extensions.TABLES
-          | Extensions.WIKILINKS
-          | Extensions.STRIKETHROUGH;
-
-    return new PegDownProcessor(pegdownExtensions, 100);
   }
 
   @Override
@@ -90,7 +72,7 @@ public class ImplementsValidator extends Validator {
       }
       String docMd = elementUtils.getDocComment(methodElement);
       if (docMd != null) {
-        documentedMethod.documentation = pegDownProcessor.markdownToHtml(docMd);
+        documentedMethod.documentation = prepareJavadocMarkdown(docMd);
       }
 
       model.documentMethod(elem, documentedMethod);
@@ -170,6 +152,10 @@ public class ImplementsValidator extends Validator {
     }
     model.addShadowType(elem, type);
     return null;
+  }
+
+  static String prepareJavadocMarkdown(String docMd) {
+    return docMd.replaceAll("\n ", "\n").trim();
   }
 
   private Integer sdkOrNull(int sdk) {

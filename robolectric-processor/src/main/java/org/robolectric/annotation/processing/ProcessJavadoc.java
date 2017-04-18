@@ -1,15 +1,11 @@
 package org.robolectric.annotation.processing;
 
 import ch.raffael.doclets.pegdown.Options;
-import ch.raffael.doclets.pegdown.SimpleTagRenderer;
 import ch.raffael.doclets.pegdown.Tags;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
-import com.sun.javadoc.Doc;
-import com.sun.javadoc.SourcePosition;
-import com.sun.javadoc.Tag;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
