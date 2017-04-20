@@ -116,10 +116,11 @@ public class RobolectricModel {
     return getDocumentedPackage(pkgElement.toString());
   }
 
-  public void documentType(TypeElement type, String documentation) {
+  public void documentType(TypeElement type, String documentation, List<String> imports) {
     System.out.println(type);
     DocumentedType documentedType = getDocumentedType(type);
     documentedType.documentation = documentation;
+    documentedType.imports = imports;
   }
 
   private DocumentedType getDocumentedType(TypeElement type) {

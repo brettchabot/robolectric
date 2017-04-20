@@ -1,5 +1,7 @@
 package org.robolectric.annotation.processing.validator;
 
+import com.sun.source.tree.ImportTree;
+import com.sun.source.util.Trees;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.processing.DocumentedMethod;
 import org.robolectric.annotation.processing.RobolectricModel;
@@ -17,6 +19,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic.Kind;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,8 +50,15 @@ public class ImplementsValidator extends Validator {
 
   @Override
   public Void visitType(TypeElement elem, Element parent) {
+
+    List<String> imports = new ArrayList<>();
+    List<? extends ImportTree> importLines = Trees.instance(env).getPath(elem).getCompilationUnit().getImports();
+    for (ImportTree importLine : importLines) {
+      imports.add(importLine.getQualifiedIdentifier().toString());
+    }
+
     Elements elementUtils = env.getElementUtils();
-    model.documentType(elem, elementUtils.getDocComment(elem));
+    model.documentType(elem, elementUtils.getDocComment(elem), imports);
 
     for (Element memberElement : ElementFilter.methodsIn(elem.getEnclosedElements())) {
       ExecutableElement methodElement = (ExecutableElement) memberElement;
