@@ -12,9 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Shadow for {@link android.hardware.SensorManager}.
- */
 @Implements(SensorManager.class)
 public class ShadowSensorManager {
   public boolean forceListenersToFail = false;
