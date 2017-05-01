@@ -29,6 +29,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.robolectric.util.TestUtil.TEST_PACKAGE;
@@ -66,7 +67,7 @@ public class XmlResourceParserImplTest {
     }
   }
 
-  private void forgeAndOpenDocument(String xmlValue) {
+  private void forgeAndOpenDocument(String xmlValue) throws Exception {
     try {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setNamespaceAware(true);
@@ -79,7 +80,7 @@ public class XmlResourceParserImplTest {
       parser = new XmlResourceParserImpl(document, "file", R.class.getPackage().getName(),
           TEST_PACKAGE, resourceTable);
       // Navigate to the root element
-      parseUntilNext(XmlResourceParser.START_TAG);
+      // parseUntilNext(XmlResourceParser.START_TAG);
     } catch (Exception parsingException) {
       // Wrap XML parsing exception with a runtime
       // exception for convenience.
@@ -87,6 +88,17 @@ public class XmlResourceParserImplTest {
           "Cannot forge a Document from an invalid XML",
           parsingException);
     }
+
+
+    //try {
+      parser.setInput(new StringReader(xmlValue));
+    //} catch (XmlPullParserException e) {
+    //  throw new RuntimeException(
+    //      "Failed to setInput",
+   //       e);
+    //}
+    // Navigate to the root element
+    parseUntilNext(XmlResourceParser.START_TAG);
   }
 
   private int attributeIndexOutOfIndex() {
@@ -106,100 +118,60 @@ public class XmlResourceParserImplTest {
   }
 
   @Test
-  public void testSetFeature() throws Exception {
-    for (String feature : XmlResourceParserImpl.AVAILABLE_FEATURES) {
-      parser.setFeature(feature, true);
-      try {
-        parser.setFeature(feature, false);
-        fail(feature + " should be true.");
-      } catch (XmlPullParserException ex) {
-        // pass
-      }
-    }
-
-    for (String feature : XmlResourceParserImpl.UNAVAILABLE_FEATURES) {
-      try {
-        parser.setFeature(feature, false);
-        fail(feature + " should not be true.");
-      } catch (XmlPullParserException ex) {
-        // pass
-      }
-      try {
-        parser.setFeature(feature, true);
-        fail(feature + " should not be true.");
-      } catch (XmlPullParserException ex) {
-        // pass
-      }
-    }
+  public void testGetAndSetFeature() throws XmlPullParserException {
+    assertThat(parser.getFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES)).isFalse();
+    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
+    assertThat(parser.getFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES)).isTrue();
   }
 
   @Test
-  public void testGetFeature() {
-    for (String feature : XmlResourceParserImpl.AVAILABLE_FEATURES) {
-      assertThat(parser.getFeature(feature)).isTrue();
-    }
-
-    for (String feature : XmlResourceParserImpl.UNAVAILABLE_FEATURES) {
-      assertThat(parser.getFeature(feature)).isFalse();
-    }
-
-    assertThat(parser.getFeature(null)).isFalse();
-  }
-
-  @Test
-  public void testSetProperty() {
+  public void testSetProperty() throws XmlPullParserException {
     try {
       parser.setProperty("foo", "bar");
-      fail("Properties should not be supported");
+      fail("setProperty should reject non URL names");
     } catch (XmlPullParserException ex) {
       // pass
     }
+    parser.setProperty("http://xmlpull.org/v1/doc/properties.html#location", "bar");
+
   }
 
   @Test
   public void testGetProperty() {
-    // Properties are not supported
+    // returns null for unrecognized properties
     assertThat(parser.getProperty("foo")).isNull();
   }
 
   @Test
-  public void testSetInput_Reader() {
-    try {
+  public void testSetInput_Reader() throws XmlPullParserException {
+//    try {
       parser.setInput(new StringReader(""));
-      fail("This method should not be supported");
-    } catch (XmlPullParserException ex) {
-      // pass
-    }
+//      fail("This method should not be supported");
+//    } catch (XmlPullParserException ex) {
+//      // pass
+//    }
   }
 
   @Test
-  public void testSetInput_InputStreamString() throws IOException {
-    try (InputStream inputStream = getClass().getResourceAsStream("src/test/resources/res/xml/preferences.xml")) {
+  public void testSetInput_InputStreamString() throws IOException, XmlPullParserException {
+    String exampleString = "<foo></foo>";
+    try (InputStream inputStream = new ByteArrayInputStream(exampleString.getBytes())) {
       parser.setInput(inputStream, "UTF-8");
-      fail("This method should not be supported");
-    } catch (XmlPullParserException ex) {
-      // pass
+
+    } finally {
+      // close stream
     }
   }
 
   @Test
-  public void testDefineEntityReplacementText() {
-    try {
-      parser.defineEntityReplacementText("foo", "bar");
-      fail("This method should not be supported");
-    } catch (XmlPullParserException ex) {
-      // pass
-    }
+  public void testDefineEntityReplacementText() throws XmlPullParserException {
+    forgeAndOpenDocument("<foo/>");
+    parser.defineEntityReplacementText("foo", "bar");
   }
 
   @Test
   public void testGetNamespacePrefix() {
-    try {
-      parser.getNamespacePrefix(0);
-      fail("This method should not be supported");
-    } catch (XmlPullParserException ex) {
-      // pass
-    }
+    parser.getNamespacePrefix(0);
   }
 
   @Test
@@ -209,37 +181,46 @@ public class XmlResourceParserImplTest {
 
   @Test
   public void testGetNamespace_String() {
-    try {
-      parser.getNamespace("bar");
-      fail("This method should not be supported");
-    } catch (RuntimeException ex) {
-      // pass
-    }
+    parser.getNamespace("bar");
   }
 
   @Test
   public void testGetNamespaceCount() {
-    try {
+    //try {
       parser.getNamespaceCount(0);
-      fail("This method should not be supported");
-    } catch (XmlPullParserException ex) {
-      // pass
-    }
+//      fail("This method should not be supported");
+//    } catch (XmlPullParserException ex) {
+//      // pass
+//    }
   }
 
   @Test
   public void testGetNamespaceUri() {
-    try {
+    //try {
       parser.getNamespaceUri(0);
-      fail("This method should not be supported");
-    } catch (XmlPullParserException ex) {
-      // pass
-    }
+//      fail("This method should not be supported");
+//    } catch (XmlPullParserException ex) {
+//      // pass
+//    }
   }
 
   @Test
-  public void testGetColumnNumber() {
-    assertThat(parser.getColumnNumber()).isEqualTo(-1);
+  public void testGetColumnNumber() throws IOException, XmlPullParserException {
+    forgeAndOpenDocument("<foo><bar a=''/>\n</foo>");
+    assertEquals(XmlPullParser.START_TAG, parser.nextToken());
+    assertEquals(XmlPullParser.END_TAG, parser.nextToken());
+    assertThat(parser.getColumnNumber()).isEqualTo(1);
+  }
+
+  @Test
+  public void testGetLineNumber() throws IOException, XmlPullParserException {
+    // not supported - always returns 1?
+    assertThat(parser.getLineNumber()).isEqualTo(1);
+    forgeAndOpenDocument("\n<foo>\n<bar a=''/>\n</foo>");
+    assertEquals(XmlPullParser.START_TAG, parser.nextToken());
+    assertEquals(XmlPullParser.END_TAG, parser.nextToken());
+    assertEquals(XmlPullParser.END_TAG, parser.nextToken());
+    assertThat(parser.getLineNumber()).isEqualTo(1);
   }
 
   @Test
@@ -697,5 +678,14 @@ public class XmlResourceParserImplTest {
   public void getStyleAttribute_withMeaninglessString_returnsZero() throws Exception {
     forgeAndOpenDocument("<foo style=\"android:style/whatever\"/>");
     assertThat(parser.getStyleAttribute()).isEqualTo(0);
+  }
+
+  @Test
+  public void getPositionDescription() throws IOException, XmlPullParserException {
+    forgeAndOpenDocument("<foo><bar/></foo>");
+    assertThat(parser.getPositionDescription()).contains("START_DOCUMENT");
+    //parser.next();
+
+    //assertThat(parser.getPositionDescription()).contains("ffff");
   }
 }

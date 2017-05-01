@@ -185,5 +185,4 @@ public final class ParameterizedRobolectricTestRunner extends Suite {
     String name = MessageFormat.format(finalPattern, parameters);
     return "[" + name + "]";
   }
-
 }
