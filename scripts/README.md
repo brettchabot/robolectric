@@ -101,9 +101,12 @@ $ ANDROID_COMPILE_WITH_JACK=false make -j8
 ```
 
 For Nougat:
+You may need to patch this commit: https://android.googlesource.com/platform/frameworks/base.git/+/e065f7c5a9ad4e47f5490793401445660af37624
+into frameworks/base/services/core/java/com/android/server/pm/ShortcutService.java
 ```
-$ tapas core-libart services services.accessibility telephony-common framework ext icu4j-icudata-host-jarjar icu4j-icutzdata-host-jarjar android.test.runner
-$ ANDROID_COMPILE_WITH_JACK=false make -j8
+$ lunch aosp_x86-eng
+$ make -j8
+$ make -j8 out/target/common/obj/JAVA_LIBRARIES/services_intermediates/classes.jar out/target/common/obj/JAVA_LIBRARIES/android.test.runner_intermediates/classes.jar out/host/linux-x86/framework/icu4j-icudata-host-jarjar.jar 
 ```
 
 

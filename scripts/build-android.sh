@@ -85,7 +85,7 @@ build_platform() {
         ARTIFACTS=("core-libart" "services" "telephony-common" "framework" "android.policy" "ext")
         SOURCES=(core graphics media location opengl policy sax services telephony wifi)
     elif [[ "${ANDROID_VERSION}" == "6.0.1_r3" ]]; then
-        ARTIFACTS=("core-libart" "services" "services.accessibility" "telephony-common" "framework" "ext" "icu4j-icudata-jarjar" "android.test.runner")
+        ARTIFACTS=("core-libart" "services" "services.accessibility" "telephony-common" "framework" "ext" "icu4j-icudata-jarjar")
         SOURCES=(core graphics media location opengl sax services telephony wifi)
         LIB_PHONE_NUMBERS_PKG="com/google/i18n/phonenumbers"
         LIB_PHONE_NUMBERS_PATH="external/libphonenumber/libphonenumber/src"
@@ -98,12 +98,11 @@ build_platform() {
         LIB_PHONE_NUMBERS_PATH="external/libphonenumber/libphonenumber/src"
         TZDATA_ARCH="generic"
     elif [[ "${ANDROID_VERSION}" == "7.1.0_r7" ]]; then
-        ARTIFACTS=("core-libart" "services" "services.accessibility" "telephony-common" "framework" "ext" "android.test.runner")
+        ARTIFACTS=("core-libart" "services" "services.accessibility" "telephony-common" "framework" "ext")
         NATIVE_ARTIFACTS=("icu4j-icudata-host-jarjar" "icu4j-icutzdata-host-jarjar")
         SOURCES=(core graphics media location opengl sax services telephony wifi)
         LIB_PHONE_NUMBERS_PKG="com/google/i18n/phonenumbers"
         LIB_PHONE_NUMBERS_PATH="external/libphonenumber/libphonenumber/src"
-        TZDATA_ARCH="generic"
     else
         echo "Robolectric: No match for version: ${ANDROID_VERSION}"
         exit 1
@@ -232,13 +231,12 @@ build_signed_packages() {
     sed s/VERSION/${ROBOLECTRIC_VERSION}/ ${SCRIPT_DIR}/pom_template.xml | sed s/ARTIFACT_ID/android-all/ > ${OUT}/${ANDROID_ALL_POM}
 
     echo "Robolectric: Signing files with gpg..."
-    #for ext in ".jar" "-javadoc.jar" "-sources.jar" ".pom"; do
-    #    ( cd ${OUT} && gpg -ab --passphrase ${SIGNING_PASSWORD} android-all-${ROBOLECTRIC_VERSION}$ext )
-    #done
+    for ext in ".jar" "-javadoc.jar" "-sources.jar" ".pom"; do
+        ( cd ${OUT} && gpg -ab --passphrase ${SIGNING_PASSWORD} android-all-${ROBOLECTRIC_VERSION}$ext )
+    done
 
     echo "Robolectric: Creating bundle for Sonatype upload..."
-    #cd ${OUT}; jar cf ${ANDROID_BUNDLE} *.jar *.pom *.asc
-    cd ${OUT}; jar cf ${ANDROID_BUNDLE} *.jar *.pom 
+    cd ${OUT}; jar cf ${ANDROID_BUNDLE} *.jar *.pom *.asc
 }
 
 mavenize() {
