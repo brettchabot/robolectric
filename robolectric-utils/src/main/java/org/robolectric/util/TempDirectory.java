@@ -73,7 +73,10 @@ public class TempDirectory {
 
     try {
       clearDirectory(path);
-      reusableDirs.add(path);
+      // clearDirectory may have silently failed - only reuse dir if empty
+      if (path.toFile().list().length == 0) {
+        reusableDirs.add(path);
+      }
     } catch (IOException ignored) {
       // We failed to clear the directory, just try again at exit
     }
